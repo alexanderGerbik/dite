@@ -2,6 +2,7 @@ from .dependency import Dependency
 from .exceptions import DependencyError, AttributeModificationError, UnknownDirectAttributeError
 from .factories import get_factory
 from .builder import build
+from .validation import validate
 
 
 def _pull_factories(cls):
@@ -25,7 +26,10 @@ class InjectorMeta(type):
             namespace[attr] = BuildEntryPoint(attr)
         cls = super().__new__(mcs, name, bases, namespace)
         cls.__di_own_factories__ = factories
+        cls.__di_abstract__ = abstract
         _pull_factories(cls)
+        if not abstract:
+            validate(cls)
         return cls
 
     def __getattr__(self, attr):
@@ -52,4 +56,8 @@ class BuildEntryPoint:
 
     def __get__(self, instance, owner):
         injector = instance or owner
+        if injector.__di_abstract__:
+            raise DependencyError(
+                "Direct abstract injector usage is disallowed. Use a concrete injector inherited from the abstract one."
+            )
         return build(Dependency(injector, self.name))

@@ -10,6 +10,15 @@ class WrongParameterTypeError(DependencyError):
         return "*args, **kwargs and positional-only parameters are not supported."
 
 
+class CycleDetectedError(DependencyError):
+    def __init__(self, cycles):
+        self.cycles = cycles
+
+    def __str__(self):
+        cycles_lines = "\n".join(" -> ".join(map(str, cycle)) for cycle in self.cycles)
+        return "There are cycles in dependency resolution:\n{}".format(cycles_lines)
+
+
 class UnexpectedDefaultValueError(DependencyError):
     CLASS_PROVIDED_MESSAGE = (
         "The default value of '{}(... {})' parameter is directly set to a class type.\n\n"
@@ -64,6 +73,11 @@ class UnknownDirectAttributeError(UnknownAttributeError, AttributeError):
     An error raised by __getattr__() should be an instance of AttributeError,
     inheriting UnknownAttributeError from AttributeError makes other code broken.
     """
+
+
+class NoInjectorParentError(DependencyError):
+    def __str__(self):
+        return "Cannot get the parent of the topmost injector"
 
 
 class AttributeModificationError(DependencyError):

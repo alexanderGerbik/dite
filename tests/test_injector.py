@@ -202,25 +202,20 @@ def test_use_default_value_for_optional_argument_in_the_middle__ok():
 
 
 def test_dependencies_with_the_same_name__built_value_is_not_reused():
-    bar_created = False
     class Foo:
         def __init__(self, x, y, bar):
             pass
 
     class Bar:
         def __init__(self, x, y=1):
-            nonlocal bar_created
-            bar_created = True
-
-    class Container(Injector):
-        foo = Foo
-        bar = Bar
-        x = 1
+            pass
 
     with pytest.raises(DependencyError) as exc_info:
-        Container.foo
+        class Container(Injector):
+            foo = Foo
+            bar = Bar
+            x = 1
 
-    assert bar_created
     assert shorten_names(exc_info.value) == "Attribute 'Container.y' doesn't exist (required to build 'Container.foo')"
 
 
@@ -398,13 +393,11 @@ def test_access_nonexistent_attr__raise_error():
 
 
 def test_indirectly_access_nonexistent_attr__raise_error():
-    class Foo(Injector):
-        @value
-        def x(nonexistent):
-            return nonexistent + 1
-
     with pytest.raises(DependencyError) as exc_info:
-        Foo.x
+        class Foo(Injector):
+            @value
+            def x(nonexistent):
+                return nonexistent + 1
 
     assert shorten_names(exc_info.value) == "Attribute 'Foo.nonexistent' doesn't exist (required to build 'Foo.x')"
 
@@ -435,10 +428,10 @@ def test_inherit_multiple_containers__child_contains_all_attrs_from_parents():
     class A(Injector):
         foo = Foo
 
-    class B(Injector):
+    class B(Injector, abstract=True):
         bar = Bar
 
-    class C(Injector):
+    class C(Injector, abstract=True):
         baz = Baz
 
     class Container(A, B, C):

@@ -263,11 +263,33 @@ def test_get_parent_of_topmost_injector__raise_error(setup_and_act):
     assert str(exc_info.value) == "Cannot get the parent of the topmost injector"
 
 
+def test_get_parent_of_topmost_injector__raise_error_on_attribute_access():
+    # the error should not be raised at container definition time,
+    # because the container can be nested inside another container.
+    class Container(Injector):
+        foo = (this << 2).bar
+
+    # Furthermore, the error should not be raised at nesting (enclosing container definition) time,
+    # because the enclosing container might in its turn be nested.
+    class Another(Injector):
+        inner = Container
+
+    class Final(Injector):
+        inner = Another
+        bar = 42
+
+    assert Final.inner.inner.foo == 42
+
+    # So, there are no other option than to raise the error on attribute access.
+    with pytest.raises(DependencyError) as exc_info:
+        _ = Another.inner.foo
+
+    assert str(exc_info.value) == "Cannot get the parent of the topmost injector"
+
+
 def access_injector_directly():
     class Container(Injector):
         foo = this
-
-    return Container.foo
 
 
 def access_injector_directly_through_child():
@@ -275,15 +297,12 @@ def access_injector_directly_through_child():
         class SubContainer(Injector):
             foo = this << 1
 
-    return Container.SubContainer.foo
-
 
 @pytest.mark.parametrize("setup_and_act", [
     access_injector_directly,
     access_injector_directly_through_child,
 ])
 def test_access_injector_directly_via_this__raise_error(setup_and_act):
-    # TODO: make the check eager
     with pytest.raises(DependencyError) as exc_info:
         setup_and_act()
 
@@ -294,15 +313,11 @@ def access_unknown_attr():
     class Container(Injector):
         foo = this.bar
 
-    return Container.foo
-
 
 def access_unknown_attr_through_child():
     class Container(Injector):
         class SubContainer(Injector):
             foo = (this << 1).bar
-
-    return Container.SubContainer.foo
 
 
 def access_unknown_attr_through_another_attr():
@@ -313,8 +328,6 @@ def access_unknown_attr_through_another_attr():
     class Container(Injector):
         foo = Foo
         bar = this.baz
-
-    return Container.foo
 
 
 @pytest.mark.parametrize("setup_and_act,expected", [
@@ -332,7 +345,6 @@ def access_unknown_attr_through_another_attr():
     ),
 ])
 def test_access_unknown_attribute__raise_error(setup_and_act, expected):
-    # TODO: make the check eager
     with pytest.raises(DependencyError) as exc_info:
         setup_and_act()
 

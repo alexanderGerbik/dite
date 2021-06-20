@@ -1,6 +1,11 @@
 from .factory import Factory, LazyFactory
 from ..dependency import Dependency
-from ..exceptions import DependencyError, DirectInjectorAccessError, UnknownAttributeError
+from ..exceptions import (
+    DependencyError,
+    DirectInjectorAccessError,
+    UnknownAttributeError,
+    NoInjectorParentError
+)
 
 
 class This(LazyFactory):
@@ -37,15 +42,17 @@ class ThisFactory(Factory):
         if not isinstance(inner_target, Dependency):
             raise DirectInjectorAccessError()
         try:
-            inner_factory = inner_target.factory
+            _ = inner_target.factory
         except UnknownAttributeError as e:
             raise e.with_reference(target)
-        inner_creation_context, unsatisfied = inner_factory.prepare(built_values, inner_target)
-        creation_context = dict(iterator=iterator, target=inner_target, creation_context=inner_creation_context)
+        unsatisfied = []
+        if inner_target not in built_values:
+            unsatisfied.append(inner_target)
+        creation_context = dict(iterator=iterator, target=inner_target, built_values=built_values)
         return creation_context, unsatisfied
 
-    def create(self, iterator, target, creation_context):
-        built_value = target.factory.create(**creation_context)
+    def create(self, iterator, target, built_values):
+        built_value = built_values[target]
         return iterator.send(built_value)
 
     def _eval_expression(self, injector):
@@ -72,7 +79,7 @@ class ThisFactory(Factory):
             if isinstance(injector, Injector):
                 injector = injector.__di_parent__
             elif isinstance(injector, type) and issubclass(injector, Injector):
-                raise DependencyError("Cannot get the parent of the topmost injector")
+                raise NoInjectorParentError()
             else:
                 type_name = type(injector).__name__
                 raise DependencyError(f"Cannot get parent of {type_name!r} instance")
