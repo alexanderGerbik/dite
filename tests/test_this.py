@@ -197,20 +197,16 @@ def test_access_complex_expression__ok(setup_and_act):
 
 
 def test_non_integer_level_amount__raise_error():
-    with pytest.raises(TypeError) as exc_info:
+    with pytest.raises(TypeError, match="Integer argument is required"):
         class Container(Injector):
             foo = this << "boom"
-
-    assert str(exc_info.value) == "Integer argument is required"
 
 
 @pytest.mark.parametrize("levels_amount", [-1, 0])
 def test_non_positive_integer_level_amount__raise_error(levels_amount):
-    with pytest.raises(ValueError) as exc_info:
+    with pytest.raises(ValueError, match="Positive integer argument is required"):
         class Container(Injector):
             foo = this << levels_amount
-
-    assert str(exc_info.value) == "Positive integer argument is required"
 
 
 def test_get_attribute_parent__raise_error():
@@ -218,10 +214,8 @@ def test_get_attribute_parent__raise_error():
         foo = this.bar << 1
         bar = 13
 
-    with pytest.raises(DependencyError) as exc_info:
+    with pytest.raises(DependencyError, match="Cannot get parent of 'int' instance"):
         _ = Container.foo
-
-    assert str(exc_info.value) == "Cannot get parent of 'int' instance"
 
 
 def test_provide_incorrect_expression__raise_error():
@@ -231,10 +225,8 @@ def test_provide_incorrect_expression__raise_error():
         foo = ThisFactory((('.', 'bar'), ('{}', 'q')))
         bar = {"q": 13}
 
-    with pytest.raises(ValueError) as exc_info:
+    with pytest.raises(ValueError, match=r"Unexpected operator: \{\}"):
         _ = Container.foo
-
-    assert str(exc_info.value) == "Unexpected operator: {}"
 
 
 def get_parent():
@@ -257,10 +249,8 @@ def get_parent_through_child():
     get_parent_through_child,
 ])
 def test_get_parent_of_topmost_injector__raise_error(setup_and_act):
-    with pytest.raises(DependencyError) as exc_info:
+    with pytest.raises(DependencyError, match="Cannot get the parent of the topmost injector"):
         setup_and_act()
-
-    assert str(exc_info.value) == "Cannot get the parent of the topmost injector"
 
 
 def test_get_parent_of_topmost_injector__raise_error_on_attribute_access():
@@ -281,10 +271,8 @@ def test_get_parent_of_topmost_injector__raise_error_on_attribute_access():
     assert Final.inner.inner.foo == 42
 
     # So, there are no other option than to raise the error on attribute access.
-    with pytest.raises(DependencyError) as exc_info:
+    with pytest.raises(DependencyError, match="Cannot get the parent of the topmost injector"):
         _ = Another.inner.foo
-
-    assert str(exc_info.value) == "Cannot get the parent of the topmost injector"
 
 
 def access_injector_directly():
@@ -303,10 +291,8 @@ def access_injector_directly_through_child():
     access_injector_directly_through_child,
 ])
 def test_access_injector_directly_via_this__raise_error(setup_and_act):
-    with pytest.raises(DependencyError) as exc_info:
+    with pytest.raises(DependencyError, match="'this' should access some attribute of the injector"):
         setup_and_act()
-
-    assert str(exc_info.value) == "'this' should access some attribute of the injector"
 
 
 def access_unknown_attr():
@@ -333,22 +319,20 @@ def access_unknown_attr_through_another_attr():
 @pytest.mark.parametrize("setup_and_act,expected", [
     (
             access_unknown_attr,
-            "Attribute 'Container.bar' doesn't exist (referred from 'Container.foo')"
+            r"Attribute '.*Container.bar' doesn't exist \(referred from '.*Container.foo'\)"
     ),
     (
             access_unknown_attr_through_child,
-            "Attribute 'Container.bar' doesn't exist (referred from 'Container.SubContainer.foo')"
+            r"Attribute '.*Container.bar' doesn't exist \(referred from '.*Container.SubContainer.foo'\)"
     ),
     (
             access_unknown_attr_through_another_attr,
-            "Attribute 'Container.baz' doesn't exist (referred from 'Container.bar')"
+            r"Attribute '.*Container.baz' doesn't exist \(referred from '.*Container.bar'\)"
     ),
 ])
 def test_access_unknown_attribute__raise_error(setup_and_act, expected):
-    with pytest.raises(DependencyError) as exc_info:
+    with pytest.raises(DependencyError, match=expected) as exc_info:
         setup_and_act()
-
-    assert shorten_names(exc_info.value) == expected
 
 
 def test_nested_container__ok():

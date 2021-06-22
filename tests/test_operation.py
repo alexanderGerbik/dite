@@ -97,21 +97,17 @@ def test_keyword_arg_overridden__expected_result():
 
 
 def test_apply_operation_to_class__raise_error():
-    with pytest.raises(DependencyError) as exc_info:
+    with pytest.raises(DependencyError, match="'operation' decorator can not be used on classes"):
         class Container(Injector):
             foo = operation(Exception)
 
-    assert str(exc_info.value) == "'operation' decorator can not be used on classes"
-
 
 def test_apply_operation_to_method__raise_error():
-    with pytest.raises(DependencyError) as exc_info:
+    with pytest.raises(DependencyError, match="'operation' decorator can not be used on methods"):
         class Container(Injector):
             @operation
             def method(self, foo, bar):
                 pass
-
-    assert str(exc_info.value) == "'operation' decorator can not be used on methods"
 
 
 def test_apply_operation_to_foreign_method__raise_error():
@@ -119,9 +115,6 @@ def test_apply_operation_to_foreign_method__raise_error():
         def method(self):
             pass
 
-    with pytest.raises(DependencyError) as exc_info:
+    with pytest.raises(DependencyError, match="'operation' decorator can not be used on methods"):
         class Container(Injector):
             method = operation(Foo.method)
-
-    assert str(exc_info.value) == "'operation' decorator can not be used on methods"
-

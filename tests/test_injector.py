@@ -3,11 +3,6 @@ import pytest
 from dite import Injector, value, DependencyError
 
 
-def shorten_names(input):
-    import re
-    return re.sub(r'(\w|\.)+\.<locals>\.', '', str(input))
-
-
 def test_usage_example():
     class Robot:
         def __init__(self, servo, controller, settings):
@@ -210,13 +205,13 @@ def test_dependencies_with_the_same_name__built_value_is_not_reused():
         def __init__(self, x, y=1):
             pass
 
-    with pytest.raises(DependencyError) as exc_info:
+    expected_message = r"Attribute '.*Container.y' doesn't exist \(required to build '.*Container.foo'\)"
+
+    with pytest.raises(DependencyError, match=expected_message):
         class Container(Injector):
             foo = Foo
             bar = Bar
             x = 1
-
-    assert shorten_names(exc_info.value) == "Attribute 'Container.y' doesn't exist (required to build 'Container.foo')"
 
 
 def test_suffixed_class_attr_with_default_value_set_to_class__ok():
@@ -280,40 +275,32 @@ def test_assign_attribute__raise_error():
     class Container(Injector):
         x = 1
 
-    with pytest.raises(DependencyError) as exc_info:
+    with pytest.raises(DependencyError, match="Injector attribute modification is not allowed") as exc_info:
         Container.foo = 1
-
-    assert str(exc_info.value) == "Injector attribute modification is not allowed"
 
 
 def test_redefine_attribute__raise_error():
     class Container(Injector):
         x = 1
 
-    with pytest.raises(DependencyError) as exc_info:
+    with pytest.raises(DependencyError, match="Injector attribute modification is not allowed"):
         Container.x = 13
-
-    assert str(exc_info.value) == "Injector attribute modification is not allowed"
 
 
 def test_remove_attribute__raise_error():
     class Container(Injector):
         x = 1
 
-    with pytest.raises(DependencyError) as exc_info:
+    with pytest.raises(DependencyError, match="Injector attribute modification is not allowed"):
         del Container.x
-
-    assert str(exc_info.value) == "Injector attribute modification is not allowed"
 
 
 def test_remove_non_existent_attribute__raise_error():
     class Container(Injector):
         pass
 
-    with pytest.raises(DependencyError) as exc_info:
+    with pytest.raises(DependencyError, match="Injector attribute modification is not allowed"):
         del Container.x
-
-    assert str(exc_info.value) == "Injector attribute modification is not allowed"
 
 
 def test_nest_injectors__ok():
@@ -385,32 +372,28 @@ def test_access_nonexistent_attr__raise_error():
     class Foo(Injector):
         x = 1
 
-    with pytest.raises(DependencyError) as exc_info:
+    with pytest.raises(DependencyError, match="Attribute '.*Foo.nonexistent' doesn't exist") as exc_info:
         Foo.nonexistent
 
     assert isinstance(exc_info.value, AttributeError)
-    assert shorten_names(exc_info.value) == "Attribute 'Foo.nonexistent' doesn't exist"
 
 
 def test_indirectly_access_nonexistent_attr__raise_error():
-    with pytest.raises(DependencyError) as exc_info:
+    expected_message = "Attribute '.*Foo.nonexistent' doesn't exist \(required to build '.*Foo.x'\)"
+    with pytest.raises(DependencyError, match=expected_message):
         class Foo(Injector):
             @value
             def x(nonexistent):
                 return nonexistent + 1
-
-    assert shorten_names(exc_info.value) == "Attribute 'Foo.nonexistent' doesn't exist (required to build 'Foo.x')"
 
 
 def test_inherit_regular_class__raise_error():
     class Foo:
         pass
 
-    with pytest.raises(DependencyError) as exc_info:
+    with pytest.raises(DependencyError, match="Injector subclass cannot inherit regular python classes"):
         class Bar(Injector, Foo):
             pass
-
-    assert str(exc_info.value) == "Injector subclass cannot inherit regular python classes"
 
 
 def test_inherit_multiple_containers__child_contains_all_attrs_from_parents():
