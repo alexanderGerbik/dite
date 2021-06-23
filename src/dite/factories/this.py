@@ -51,7 +51,10 @@ class ThisFactory(Factory):
         creation_context = dict(iterator=iterator, target=inner_target, built_values=built_values)
         return creation_context, unsatisfied
 
-    def create(self, iterator, target, built_values):
+    def create(self, dependency, kwargs):
+        iterator = kwargs['iterator']
+        target = kwargs['target']
+        built_values = kwargs['built_values']
         built_value = built_values[target]
         return iterator.send(built_value)
 

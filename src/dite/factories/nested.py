@@ -10,5 +10,6 @@ class Nested(Factory):
         unsatisfied = []
         return creation_context, unsatisfied
 
-    def create(self, parent_injector):
+    def create(self, dependency, kwargs):
+        parent_injector = kwargs['parent_injector']
         return self.injector(parent_injector)

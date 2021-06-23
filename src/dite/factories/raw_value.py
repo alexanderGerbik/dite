@@ -8,5 +8,5 @@ class RawValue(Factory):
     def prepare(self, built_values, target):
         return {}, []
 
-    def create(self, **kwargs):
+    def create(self, dependency, kwargs):
         return self.value

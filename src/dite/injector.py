@@ -27,6 +27,7 @@ class InjectorMeta(type):
         cls = super().__new__(mcs, name, bases, namespace)
         cls.__di_own_factories__ = factories
         cls.__di_abstract__ = abstract
+        cls.__di_cache__ = {}
         _pull_factories(cls)
         if not abstract:
             validate(cls)

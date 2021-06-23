@@ -40,8 +40,8 @@ class PackageFactory(Factory):
     def prepare(self, built_values, target):
         return self.inner_factory.prepare(built_values, target)
 
-    def create(self, **creation_context):
-        result = self.inner_factory.create(**creation_context)
+    def create(self, dependency, kwargs):
+        result = self.inner_factory.create(dependency, kwargs)
         for attr in self.path:
             result = getattr(result, attr)
         return result

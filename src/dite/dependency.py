@@ -33,3 +33,13 @@ class Dependency:
         if self.attr not in self.factories:
             raise UnknownAttributeError(self)
         return self.factories[self.attr]
+
+    @property
+    def is_in_cache(self):
+        return self.attr in self.injector_type.__di_cache__
+
+    def get_from_cache(self):
+        return self.injector_type.__di_cache__[self.attr]
+
+    def store_in_cache(self, value):
+        self.injector_type.__di_cache__[self.attr] = value

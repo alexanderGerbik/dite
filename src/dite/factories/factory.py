@@ -8,7 +8,7 @@ class Factory(ABC):
         return creation_context, unsatisfied
 
     @abstractmethod
-    def create(self, **kwargs):   # pragma: no cover
+    def create(self, dependency, kwargs):   # pragma: no cover
         created_instance = None
         return created_instance
 

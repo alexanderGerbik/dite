@@ -50,7 +50,7 @@ class Value(Factory):
 
         return creation_context, unsatisfied
 
-    def create(self, **kwargs):
+    def create(self, dependency, kwargs):
         if self.deferred:
             return functools.partial(self.function, **kwargs)
         return self.function(**kwargs)

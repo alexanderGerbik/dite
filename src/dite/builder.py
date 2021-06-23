@@ -12,7 +12,7 @@ def build(target):
             raise e.with_cause(cause)
         creation_context, unsatisfied = factory.prepare(built_values, current_target)
         if not unsatisfied:
-            built_values[current_target] = factory.create(**creation_context)
+            built_values[current_target] = factory.create(current_target, creation_context)
             backlog.pop()
         else:
             for value in unsatisfied:
