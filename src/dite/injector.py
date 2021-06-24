@@ -1,3 +1,4 @@
+from .cache_storage import DictCacheStorage
 from .dependency import Dependency
 from .exceptions import DependencyError, AttributeModificationError, UnknownDirectAttributeError
 from .factories import get_factory
@@ -27,11 +28,18 @@ class InjectorMeta(type):
         cls = super().__new__(mcs, name, bases, namespace)
         cls.__di_own_factories__ = factories
         cls.__di_abstract__ = abstract
-        cls.__di_cache__ = {}
         _pull_factories(cls)
+        mcs._finish_construction(cls)
         if not abstract:
             validate(cls)
         return cls
+
+    def _finish_construction(cls):
+        cls.__di_cache__ = DictCacheStorage()
+        from .factories.dynamic_value import DynamicValueFactory
+        for attr, value in cls.__di_factories__.items():
+            if isinstance(value, DynamicValueFactory):
+                raise DependencyError(f"Usual injector are disallowed to have dynamic values ({attr}).")
 
     def __getattr__(self, attr):
         dependency = Dependency(self, attr)

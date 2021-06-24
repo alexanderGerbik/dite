@@ -45,19 +45,18 @@ class UnexpectedDefaultValueError(DependencyError):
         return template.format(self.owner_name, self.attr)
 
 
-class UnknownAttributeError(DependencyError):
-    def __init__(self, dependency):
-        self.dependency = dependency
+class TrackedCallerError(DependencyError):
+    def __init__(self):
         self.cause = None
         self.reference = None
 
     def __str__(self):
-        suffix = ''
+        result = ''
         if self.cause is not None:
-            suffix += f" (required to build '{self.cause}')"
+            result += f" (required to build '{self.cause}')"
         if self.reference is not None:
-            suffix += f" (referred from '{self.reference}')"
-        return f"Attribute '{self.dependency}' doesn't exist{suffix}"
+            result += f" (referred from '{self.reference}')"
+        return result
 
     def with_cause(self, cause):
         self.cause = cause
@@ -66,6 +65,26 @@ class UnknownAttributeError(DependencyError):
     def with_reference(self, reference):
         self.reference = reference
         return self
+
+
+class DynamicValueNotSetError(TrackedCallerError):
+    def __init__(self, dependency):
+        super().__init__()
+        self.dependency = dependency
+
+    def __str__(self):
+        suffix = super().__str__()
+        return f"'{self.dependency}' is accessed but there is no active scope{suffix}"
+
+
+class UnknownAttributeError(TrackedCallerError):
+    def __init__(self, dependency):
+        super().__init__()
+        self.dependency = dependency
+
+    def __str__(self):
+        suffix = super().__str__()
+        return f"Attribute '{self.dependency}' doesn't exist{suffix}"
 
 
 class UnknownDirectAttributeError(UnknownAttributeError, AttributeError):

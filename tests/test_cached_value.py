@@ -3,7 +3,7 @@ import re
 
 import pytest
 
-from dite import Injector, value, cached_value, DependencyError
+from dite import Injector, value, cached_value, DependencyError, ScopedInjector, begin_scope
 
 
 def test_request_cached_value_multiple_times__return_the_same_value():
@@ -23,6 +23,63 @@ def test_request_cached_value_multiple_times__return_the_same_value():
 
     assert Singleton.instances_amount == 1
     assert a is b
+
+
+def test_activate_scope_and_access_cached_value__return_the_same_value():
+    class Singleton:
+        instances_amount = 0
+
+        def __init__(self):
+            Singleton.instances_amount += 1
+
+    class Container(ScopedInjector):
+        @cached_value
+        def value():
+            return Singleton()
+
+    with begin_scope(Container):
+        a = Container.value
+        b = Container.value
+
+    with begin_scope(Container):
+        c = Container.value
+
+    assert Singleton.instances_amount == 2
+    assert a is b
+    assert a is not c
+
+
+def test_access_cached_value_no_active_scope__raise_error():
+    class Singleton:
+        pass
+
+    class Container(ScopedInjector):
+        @cached_value
+        def value():
+            return Singleton()
+
+    with pytest.raises(DependencyError, match="cached_value usage is disallowed when there is no active scope"):
+        _ = Container.value
+
+
+def test_scope_is_stopped__cached_value_garbage_collected():
+    is_garbage_collected = False
+
+    class Singleton:
+        def __del__(self):
+            nonlocal is_garbage_collected
+            is_garbage_collected = True
+
+    class Container(ScopedInjector):
+        @cached_value
+        def value():
+            return Singleton()
+
+    with begin_scope(Container):
+        a = Container.value
+        del a
+
+    assert is_garbage_collected
 
 
 def test_apply_cached_value_to_class__ok():
@@ -46,6 +103,7 @@ def test_request_cached_value_with_new_dependencies__use_stale_dependencies_and_
         " since the first invocation. New values are ignored and an instance with stale values was returned."
     )
     next_value = 0
+
     class Singleton:
         def __init__(self, value):
             self.value = value
@@ -93,6 +151,6 @@ def test_apply_cached_value_to_method__raise_rror():
     lambda: cached_value.for_deferred_function(None),
     lambda: cached_value._inspect_args(None, False),
 ])
-def test_call_not_implemented_cached_value_method__raise_rror(act):
+def test_call_not_implemented_cached_value_method__raise_error(act):
     with pytest.raises(NotImplementedError):
         act()

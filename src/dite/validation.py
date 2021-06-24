@@ -1,5 +1,5 @@
 from .dependency import Dependency
-from .exceptions import NoInjectorParentError, UnknownAttributeError, CycleDetectedError
+from .exceptions import NoInjectorParentError, TrackedCallerError, CycleDetectedError
 from .factories import Nested
 
 
@@ -34,7 +34,7 @@ def _check_buildability(current_target, cause, visited_targets, temp_targets):
 
     try:
         factory = current_target.factory
-    except UnknownAttributeError as e:
+    except TrackedCallerError as e:
         raise e.with_cause(cause)
     creation_context, unsatisfied = factory.prepare({}, current_target)
 

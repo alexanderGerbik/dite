@@ -40,7 +40,10 @@ class CachedValue(Value):
             return value
         value = self.function(**kwargs)
         creation_kwargs = {k: id(v) for k, v in kwargs.items()}
-        dependency.store_in_cache((value, creation_kwargs))
+        try:
+            dependency.store_in_cache((value, creation_kwargs))
+        except LookupError:
+            raise DependencyError("cached_value usage is disallowed when there is no active scope")
         return value
 
     def _check_stale_kwargs(self, dependency, creation_kwargs, current_kwargs):
