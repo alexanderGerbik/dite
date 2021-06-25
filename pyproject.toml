@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "dite"
-version = "0.1.0"
+version = "0.2.0"
 description = "Dependency injection container for python."
 authors = ["Alexander Gerbik <alexander.gerbik@gmail.com>"]
 readme = "README.md"
