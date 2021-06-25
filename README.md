@@ -76,7 +76,7 @@ scope.stop()
 ### Cached values
 
 `cached_value` decorator can be used to cache the built value for the lifetime of the injector,
-rathen than within attribute access:
+rather than within attribute access:
 
 ```python
 from dite import Injector, cached_value
