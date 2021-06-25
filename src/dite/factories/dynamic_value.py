@@ -20,4 +20,12 @@ class DynamicValueFactory(Factory):
         raise DynamicValueNotSetError(dependency)
 
 
+def init_dynamic_values(injector):
+    dynamic_values = set()
+    for attr, value in injector.__di_factories__.items():
+        if isinstance(value, DynamicValueFactory):
+            dynamic_values.add(attr)
+    injector.__di_dynamic_values__ = dynamic_values
+
+
 dynamic_value = _DynamicValue()

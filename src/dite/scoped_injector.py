@@ -1,17 +1,13 @@
 from .cache_storage import ContextVarCacheStorage
 from .exceptions import DependencyError
+from .factories.dynamic_value import init_dynamic_values
 from .injector import Injector, InjectorMeta
 
 
 class ScopedInjectorMeta(InjectorMeta):
     def _finish_construction(cls):
         cls.__di_cache__ = ContextVarCacheStorage(cls.__qualname__)
-        dynamic_values = set()
-        from .factories.dynamic_value import DynamicValueFactory
-        for attr, value in cls.__di_factories__.items():
-            if isinstance(value, DynamicValueFactory):
-                dynamic_values.add(attr)
-        cls.__di_dynamic_values__ = dynamic_values
+        init_dynamic_values(cls)
 
 
 class ScopedInjector(Injector, metaclass=ScopedInjectorMeta, abstract=True):
